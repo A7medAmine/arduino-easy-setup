@@ -4,7 +4,8 @@
 # beginner problems (brltty stealing CH340 boards, ModemManager, sandbox errors, clone Nanos...).
 # Works with the bash 3.2 that ships with macOS: no associative arrays, no mapfile.
 #
-# Usage:  bash setup-mac-linux.sh            (menu)
+# Usage:  curl -fsSL https://raw.githubusercontent.com/A7medAmine/arduino-easy-setup/main/setup-mac-linux.sh | bash
+#         bash setup-mac-linux.sh            (menu)
 #         bash setup-mac-linux.sh --auto     (full setup, AVR boards only)
 #         bash setup-mac-linux.sh --auto --esp32 --esp8266
 
@@ -781,38 +782,44 @@ full_setup() {
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
-mkdir -p "$TOOL_DIR" "$DOWNLOAD_DIR" "$LOG_DIR"
-# Copy everything printed to a log file (useful when asking for help)
-exec > >(tee -a "$LOG_FILE") 2>&1
+# Everything runs inside main() so that "curl ... | bash" reads the whole script
+# before executing anything (otherwise commands reading stdin could eat the script).
+main() {
+    mkdir -p "$TOOL_DIR" "$DOWNLOAD_DIR" "$LOG_DIR"
+    # Copy everything printed to a log file (useful when asking for help)
+    exec > >(tee -a "$LOG_FILE") 2>&1
 
-printf '\n%s  ======================================%s\n' "$C_CYAN" "$C_RESET"
-printf '%s     Arduino Easy Setup (%s)%s\n' "$C_CYAN" "$( [ "$OS" = Darwin ] && echo macOS || echo Linux )" "$C_RESET"
-printf '%s  ======================================%s\n' "$C_CYAN" "$C_RESET"
+    printf '\n%s  ======================================%s\n' "$C_CYAN" "$C_RESET"
+    printf '%s     Arduino Easy Setup (%s)%s\n' "$C_CYAN" "$( [ "$OS" = Darwin ] && echo macOS || echo Linux )" "$C_RESET"
+    printf '%s  ======================================%s\n' "$C_CYAN" "$C_RESET"
 
-case "$OS" in Darwin|Linux) ;; *) bad "This script is for macOS and Linux. On Windows run setup-windows.bat"; exit 1 ;; esac
-command -v curl >/dev/null 2>&1 || { [ "$OS" = Linux ] && install_linux_deps; }
+    case "$OS" in Darwin|Linux) ;; *) bad "This script is for macOS and Linux. On Windows run setup-windows.bat"; exit 1 ;; esac
+    command -v curl >/dev/null 2>&1 || { [ "$OS" = Linux ] && install_linux_deps; }
 
-if [ "$AUTO" = 1 ]; then
-    full_setup
-    exit $?
-fi
+    if [ "$AUTO" = 1 ]; then
+        full_setup
+        exit $?
+    fi
 
-while true; do
-    echo
-    echo "  1) Full setup (recommended for the first time)"
-    echo "  2) Test my board (detect, upload Blink, check Serial)"
-    echo "  3) Diagnose and fix problems"
-    echo "  4) Repair board manager (stuck or failed downloads)"
-    echo "  5) Show log folder"
-    echo "  0) Exit"
-    printf '  Choose: '
-    read -r choice </dev/tty || exit 0
-    case "$choice" in
-        1) full_setup ;;
-        2) test_board ;;
-        3) diagnose ;;
-        4) install_cli && repair_board_manager && install_cores arduino:avr ;;
-        5) echo "  $LOG_DIR"; [ "$OS" = Darwin ] && open "$LOG_DIR" ;;
-        0) exit 0 ;;
-    esac
-done
+    while true; do
+        echo
+        echo "  1) Full setup (recommended for the first time)"
+        echo "  2) Test my board (detect, upload Blink, check Serial)"
+        echo "  3) Diagnose and fix problems"
+        echo "  4) Repair board manager (stuck or failed downloads)"
+        echo "  5) Show log folder"
+        echo "  0) Exit"
+        printf '  Choose: '
+        read -r choice </dev/tty || exit 0
+        case "$choice" in
+            1) full_setup ;;
+            2) test_board ;;
+            3) diagnose ;;
+            4) install_cli && repair_board_manager && install_cores arduino:avr ;;
+            5) echo "  $LOG_DIR"; [ "$OS" = Darwin ] && open "$LOG_DIR" ;;
+            0) exit 0 ;;
+        esac
+    done
+}
+
+main "$@"

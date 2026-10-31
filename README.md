@@ -3,7 +3,23 @@
 One tool that installs everything a beginner needs to start with Arduino, then checks the
 board connection and fixes the common problems automatically.
 
-## How to run
+## Quick start (one line)
+
+**Windows** — press `Win + X`, open **Terminal** or **PowerShell**, paste:
+
+```powershell
+irm https://raw.githubusercontent.com/A7medAmine/arduino-easy-setup/main/install.ps1 | iex
+```
+
+**macOS / Linux** — open **Terminal**, paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/A7medAmine/arduino-easy-setup/main/setup-mac-linux.sh | bash
+```
+
+This always runs the latest version from GitHub. No download, no unzip.
+
+## Run from a downloaded copy
 
 **Windows** — double-click `setup-windows.bat`.
 Windows may show "Windows protected your PC": click *More info* → *Run anyway*.
