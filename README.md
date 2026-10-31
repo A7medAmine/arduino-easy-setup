@@ -39,11 +39,35 @@ Then pick **1) Full setup**. When it finishes, it offers to test your board.
 
 | Option | What it does |
 |---|---|
-| 1. Full setup | Installs Arduino IDE 2, board packages (Uno/Nano/Mega, optional ESP32/ESP8266), drivers, and applies all fixes |
-| 2. Test my board | Asks you to unplug/replug the board, detects the USB chip, fixes the driver, uploads a Blink test, and checks Serial |
+| 1. Full setup | Installs Arduino IDE 2, board packages (Uno/Nano/Mega, optional ESP32/ESP8266), drivers, beginner libraries, and applies all fixes |
+| 2. Test my board | Asks you to unplug/replug the board, detects the USB chip, fixes the driver, checks the connection is stable, uploads a Blink test, and checks Serial |
 | 3. Diagnose and fix | Checks every item below and fixes what is wrong |
-| 4. Repair board manager | Clears broken downloads and the board index cache, reinstalls Arduino AVR boards |
-| 5. Reinstall USB drivers (Windows) | Installs CH340 and CP210x drivers again |
+| 4. Install beginner libraries | Pick from Servo, DHT, LCD I2C, OLED, NeoPixel, ultrasonic, IR, keypad, RFID, DS18B20, RTC - or all of them |
+| 5. Explain an error message | Reads the error you copied in the IDE and explains it in plain English, and offers to install a missing library |
+| 6. Board hardware check | Guided test for boards that will not upload: power LED, bootloader blink, RX/TX loopback test of the USB chip, and how to burn a new bootloader |
+| 7. Repair board manager | Clears broken downloads and the board index cache, reinstalls Arduino AVR boards |
+| 8. Reinstall USB drivers (Windows) | Installs CH340 and CP210x drivers again |
+
+### Error explainer
+
+In the Arduino IDE click **Copy error messages**, then choose option 5. It recognizes:
+missing `;`, `}` or `)`, unknown names (with spelling/capital-letter hints), missing libraries
+(and installs them), WiFi code on a board without WiFi, `Serial1` on a Uno, smart quotes copied
+from websites, duplicate `setup()`, sketch too big, low RAM, upload `not in sync`, busy port,
+ESP32 boot mode, and more. Upload failures in "Test my board" are explained automatically.
+
+### Board hardware check
+
+Finds out *why* a board will not upload:
+
+| Result | Meaning |
+|---|---|
+| Power LED off | No power: cable, USB port, or damaged board |
+| Board disconnects by itself | Short circuit in the wiring, or servos/motors drawing too much power |
+| RX/TX loopback fails | The USB-to-serial chip or the cable is bad |
+| Loopback works, no bootloader blink | Bootloader missing: shows how to burn it with a second Arduino |
+| Everything works | Wrong board/processor selected, or something on pins 0/1 |
+| Counterfeit FTDI chip (PID 0000) | Explains how to restore it (Linux: re-enables it automatically) |
 
 Non-interactive: `setup-windows.bat -Auto -Esp32 -Esp8266` or `bash setup-mac-linux.sh --auto --esp32 --esp8266`.
 

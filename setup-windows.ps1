@@ -54,6 +54,92 @@ $Boards = @(
     @{ Key = '5'; Name = 'ESP8266 NodeMCU / Wemos D1 mini'; Fqbn = 'esp8266:esp8266:nodemcuv2';     Core = 'esp8266:esp8266' }
 )
 
+$Libraries = @(
+    @{ Name = 'Servo';              For = 'Servo motors' }
+    @{ Name = 'DHT sensor library'; For = 'DHT11 / DHT22 temperature and humidity sensors' }
+    @{ Name = 'LiquidCrystal I2C';  For = '16x2 / 20x4 LCD screens with an I2C backpack' }
+    @{ Name = 'Adafruit SSD1306';   For = '0.96 inch OLED screens' }
+    @{ Name = 'Adafruit NeoPixel';  For = 'WS2812 / NeoPixel RGB LED strips' }
+    @{ Name = 'NewPing';            For = 'HC-SR04 ultrasonic distance sensors' }
+    @{ Name = 'IRremote';           For = 'Infrared remotes and receivers' }
+    @{ Name = 'Keypad';             For = 'Matrix keypads (4x4, 4x3)' }
+    @{ Name = 'MFRC522';            For = 'RC522 RFID card readers' }
+    @{ Name = 'DallasTemperature';  For = 'DS18B20 waterproof temperature sensors' }
+    @{ Name = 'RTClib';             For = 'DS1307 / DS3231 real-time clocks' }
+)
+
+# Header file -> library that provides it (used by the error explainer)
+$HeaderToLibrary = @{
+    'Servo.h' = 'Servo'; 'DHT.h' = 'DHT sensor library'; 'Adafruit_Sensor.h' = 'Adafruit Unified Sensor'
+    'LiquidCrystal_I2C.h' = 'LiquidCrystal I2C'; 'Adafruit_SSD1306.h' = 'Adafruit SSD1306'
+    'Adafruit_GFX.h' = 'Adafruit GFX Library'; 'Adafruit_NeoPixel.h' = 'Adafruit NeoPixel'
+    'NewPing.h' = 'NewPing'; 'IRremote.h' = 'IRremote'; 'IRremote.hpp' = 'IRremote'; 'Keypad.h' = 'Keypad'
+    'MFRC522.h' = 'MFRC522'; 'DallasTemperature.h' = 'DallasTemperature'; 'OneWire.h' = 'OneWire'
+    'RTClib.h' = 'RTClib'
+}
+
+# Headers that only exist when the matching board is selected
+$BoardOnlyHeaders = @{
+    'WiFi.h' = 'ESP32 boards'; 'WebServer.h' = 'ESP32 boards'; 'BluetoothSerial.h' = 'ESP32 boards'
+    'ESP8266WiFi.h' = 'ESP8266 boards'; 'ESP8266WebServer.h' = 'ESP8266 boards'
+}
+
+# Compiler and upload messages -> plain-language explanation
+$ErrorRules = @(
+    @{ Pattern = 'expected .{1,3};.{1,3} before'; Title = 'Missing semicolon'
+       Fix = @('A line is missing ";" at the end. Look at the line BEFORE the one in the error.') }
+    @{ Pattern = 'expected .{1,3}\}.{1,3} at end of input'; Title = 'Missing closing brace }'
+       Fix = @('Every { needs a matching }. Use Tools > Auto Format to see where one is missing.') }
+    @{ Pattern = 'expected (declaration|unqualified-id) before'; Title = 'Code outside a function, or an extra }'
+       Fix = @('Code must be inside setup() or loop(). Check for an extra } or a stray character.') }
+    @{ Pattern = 'a function-definition is not allowed here'; Title = 'A function is inside another function'
+       Fix = @('Usually a } is missing at the end of setup() or loop() just above this line.') }
+    @{ Pattern = 'expected .{1,3}\).{1,3} before'; Title = 'Missing closing bracket )'
+       Fix = @('Count the ( and ) on that line - they must match.') }
+    @{ Pattern = 'expected primary-expression before'; Title = 'Typo in an expression'
+       Fix = @('Something is missing or extra near that spot: a bracket, a comma, or a value.') }
+    @{ Pattern = 'expected initializer before'; Title = 'Typo in a declaration'
+       Fix = @('Often a missing ";" on the line before, or a misspelled type like "Int" instead of "int".') }
+    @{ Pattern = 'else.{1,3} without a previous .{1,3}if'; Title = 'else without if'
+       Fix = @('Remove the ";" after if (...), and wrap multi-line blocks in { }.') }
+    @{ Pattern = 'stray .{1,3}\\\d{3}'; Title = 'Strange characters in the code'
+       Fix = @('Code copied from a website or PDF contains invisible or "smart" quote characters.',
+               'Retype the quotes and minus signs on that line, or copy the code from a plain text source.') }
+    @{ Pattern = 'redefinition of .{1,3}void (setup|loop)\(\)'; Title = 'setup() or loop() exists twice'
+       Fix = @('Your sketch folder has more than one .ino file (several tabs). A sketch needs exactly one setup() and one loop().') }
+    @{ Pattern = '(redeclaration of|conflicting declaration)'; Title = 'Same name declared twice'
+       Fix = @('Two variables have the same name. Rename one or remove the duplicate.') }
+    @{ Pattern = 'too (few|many) arguments to function'; Title = 'Wrong number of values passed to a function'
+       Fix = @('Check how many values the function needs, e.g. digitalWrite(pin, HIGH) needs two.') }
+    @{ Pattern = '(invalid conversion from|cannot convert)'; Title = 'Wrong type of value'
+       Fix = @('A value has the wrong type (text where a number is expected, etc). Check the variable types.') }
+    @{ Pattern = 'jump to case label'; Title = 'Variable declared inside a switch case'
+       Fix = @('Put the code of that case inside { } braces.') }
+    @{ Pattern = 'undefined reference to'; Title = 'Function used but not found when linking'
+       Fix = @('A function is used but never written, a library is incomplete, or the library does not support this board.') }
+    @{ Pattern = '(Sketch too big|text section exceeds available space|region .* overflowed)'; Title = 'Program too big for this board'
+       Fix = @('Remove unused libraries/code, or use a bigger board (Mega or ESP32).') }
+    @{ Pattern = '(Low memory available|data section exceeds available space)'; Title = 'Not enough RAM'
+       Fix = @('Wrap fixed texts in F(): Serial.println(F("hello")). Use smaller arrays.') }
+    @{ Pattern = '(may be incompatible with your current board|claims to run on)'; Title = 'Library made for another board'
+       Fix = @('This library does not support the board selected in Tools > Board. Find another library or board.') }
+    @{ Pattern = 'Multiple libraries were found for'; Title = 'Note: two copies of a library are installed'
+       Fix = @('Not an error by itself. If things fail, delete the copy you do not use from the libraries folder of your sketchbook.') }
+    @{ Pattern = '(programmer is not responding|not in sync|stk500v2_ReceiveMessage|stk500_recv)'; Title = 'The board did not answer the upload'
+       Fix = @('Check Tools > Board and Tools > Port. Nano clones: Tools > Processor > ATmega328P (Old Bootloader).',
+               'Disconnect anything on pins 0 and 1. Run "Test my board" or "Board hardware check" in this tool.') }
+    @{ Pattern = "(can't open device|could not open port|Access is denied|Permission denied|Resource busy|PermissionError)"; Title = 'Serial port busy or not allowed'
+       Fix = @('Close the Serial Monitor/Plotter and other programs using the port, then upload again.') }
+    @{ Pattern = '(no upload port provided|No device found|Port monitor error)'; Title = 'No port selected'
+       Fix = @('Plug in the board and choose it in Tools > Port. No port listed? Run "Test my board".') }
+    @{ Pattern = '(Failed to connect to ESP|Wrong boot mode|Timed out waiting for packet header|No serial data received)'; Title = 'ESP board not in upload mode'
+       Fix = @('Hold the BOOT button, click Upload, release when "Connecting..." appears.') }
+    @{ Pattern = '(executable file not found|python3?: (command )?not found)'; Title = 'A required tool (Python) is missing'
+       Fix = @('Run "Diagnose and fix" in this tool, then restart the IDE.') }
+    @{ Pattern = '(file name too long|filename or extension is too long)'; Title = 'File path too long'
+       Fix = @('Run "Diagnose and fix" in this tool to enable long paths and move the Arduino folders.') }
+)
+
 # ---------------------------------------------------------------------------
 # Output helpers
 # ---------------------------------------------------------------------------
@@ -404,6 +490,13 @@ function Get-UsbSerialDevices {
 }
 
 function Repair-Device($device) {
+    # Official FTDI drivers set the product ID of counterfeit chips to 0000, which disables them
+    if ($device.Vid -eq '0403' -and $device.Pid -eq '0000') {
+        Write-Bad 'This board has a counterfeit FTDI chip that the FTDI driver disabled (PID 0000).'
+        Write-Tip 'The board is not broken. Restore it with FTDI "FT_PROG" (set PID back to 6001),'
+        Write-Tip 'or use a board/adapter with a CH340 or CP2102 chip instead.'
+        return $null
+    }
     if ($device.Status -eq 'OK' -and $device.Port) { return $device }
     Write-Warn "$($device.Chip) found but it has no working COM port (status: $($device.Status))."
     switch ($device.Driver) {
@@ -516,6 +609,11 @@ function Test-SerialOutput($port) {
         while ((Get-Date) -lt $deadline) {
             try { $text += $sp.ReadExisting() } catch { }
             if ($text -match 'EASY-SETUP-OK') { Write-Ok 'Serial communication works'; return $true }
+            if ($text -match 'NON GENUINE DEVICE') {
+                Write-Bad 'The FTDI driver found a counterfeit chip and replaces your data with a warning.'
+                Write-Tip 'Install the older FTDI driver 2.10.00, or use a CH340/CP2102 board instead.'
+                return $false
+            }
             Start-Sleep -Milliseconds 200
         }
         Write-Warn 'No serial text received (the upload worked, so this is usually harmless).'
@@ -530,28 +628,12 @@ function Test-SerialOutput($port) {
     }
 }
 
-function Show-UploadAdvice($output, $board) {
-    if ($output -match 'Access is denied|could not open port|PermissionError|busy') {
-        Write-Tip 'The port is used by another program: close Serial Monitor, Cura, other IDEs, then retry.'
-    }
-    if ($output -match 'not in sync|programmer is not responding') {
-        Write-Tip 'The board did not answer. Check the selected board type and port.'
-        Write-Tip 'Something connected to pins 0/1 (RX/TX) blocks uploads - disconnect it.'
-    }
-    if ($output -match 'Failed to connect to ESP|Wrong boot mode|No serial data received') {
-        Write-Tip 'ESP boards: hold the BOOT button, start the upload, release when "Connecting..." appears.'
-    }
-    if ($output -match 'No such file or directory|file name too long|cannot find the path') {
-        Write-Tip 'Path problem: run "Diagnose and fix" to move Arduino folders to a safe path.'
-    }
-}
-
 function Invoke-Upload($board, $port, $sketch) {
     Write-Step "Compiling test sketch for $($board.Name)..."
     $c = Invoke-Cli compile --fqbn $board.Fqbn $sketch
     if ($c.ExitCode -ne 0) {
         Write-Bad 'Compiling failed.'
-        Show-UploadAdvice $c.Output $board
+        [void](Show-ErrorHelp $c.Output)
         return $false
     }
     Write-Ok 'Compiled'
@@ -586,7 +668,7 @@ function Invoke-Upload($board, $port, $sketch) {
     }
 
     Write-Bad 'Upload failed.'
-    Show-UploadAdvice $u.Output $board
+    [void](Show-ErrorHelp $u.Output)
     return $false
 }
 
@@ -597,6 +679,7 @@ function Test-Board {
     if (-not $device) { return }
     if ($device.Vid) { $device = Repair-Device $device }
     if (-not $device -or -not $device.Port) { return }
+    [void](Test-ConnectionStable $device)
 
     $board = Select-Board $device
     $installed = (Invoke-CliQuiet core list).Output
@@ -614,7 +697,256 @@ function Test-Board {
         Write-Host '  In the Arduino IDE choose:' -ForegroundColor Cyan
         Write-Host "    Tools > Board > $($board.Name)"
         Write-Host "    Tools > Port  > $($device.Port)"
+    } else {
+        Invoke-BoardRescue $device $board
     }
+}
+
+# ---------------------------------------------------------------------------
+# Beginner libraries
+# ---------------------------------------------------------------------------
+function Install-Library($name) {
+    $r = Invoke-Cli lib install $name
+    if ($r.ExitCode -eq 0) { Write-Ok "$name installed"; return $true }
+    Write-Bad "Could not install $name"
+    return $false
+}
+
+function Install-Libraries {
+    Write-Title 'Beginner libraries'
+    if (-not (Test-Path $Cli)) { Install-ArduinoCli; Initialize-Config @() }
+    Write-Step 'Updating library index...'
+    [void](Invoke-CliQuiet lib update-index)
+    $installed = (Invoke-CliQuiet lib list).Output
+    for ($i = 0; $i -lt $Libraries.Count; $i++) {
+        $lib = $Libraries[$i]
+        $mark = ''
+        if ($installed -match "(?m)^$([regex]::Escape($lib.Name)) ") { $mark = '[installed]' }
+        Write-Host ('    {0,2}) {1,-20} {2} {3}' -f ($i + 1), $lib.Name, $lib.For, $mark)
+    }
+    Write-Host '     A) All of them'
+    $answer = 'A'
+    if (-not $Auto) { $answer = (Read-Host '  Numbers separated by commas, or A for all').Trim() }
+    $selected = @()
+    if ($answer -match '^[aA]') {
+        $selected = $Libraries
+    } else {
+        foreach ($part in ($answer -split '[,\s]+')) {
+            if ($part -match '^\d+$' -and [int]$part -ge 1 -and [int]$part -le $Libraries.Count) {
+                $selected += $Libraries[[int]$part - 1]
+            }
+        }
+    }
+    if ($selected.Count -eq 0) { Write-Warn 'Nothing selected.'; return }
+    foreach ($lib in $selected) {
+        Write-Step "Installing $($lib.Name)..."
+        [void](Install-Library $lib.Name)
+    }
+    Write-Tip 'Examples: in the IDE open File > Examples and scroll down to the library name.'
+}
+
+# ---------------------------------------------------------------------------
+# Error explainer
+# ---------------------------------------------------------------------------
+# Explains compiler/upload output in plain language. Returns how many problems it recognized.
+# gcc quotes names with ' or with Unicode quotes depending on the system, hence ".{1,3}".
+function Show-ErrorHelp($text) {
+    if (-not $text) { return 0 }
+    $found = 0
+
+    $headers = @([regex]::Matches($text, '([\w./\\-]+\.h(?:pp)?): No such file or directory') |
+        ForEach-Object { Split-Path $_.Groups[1].Value -Leaf } | Select-Object -Unique)
+    foreach ($h in $headers) {
+        $found++
+        if ($BoardOnlyHeaders.ContainsKey($h)) {
+            Write-Host "  * $h only exists for $($BoardOnlyHeaders[$h])" -ForegroundColor Yellow
+            Write-Tip 'Select the right board in Tools > Board. Uno, Nano and Mega have no WiFi or Bluetooth.'
+            continue
+        }
+        Write-Host "  * Missing library: $h" -ForegroundColor Yellow
+        $lib = $HeaderToLibrary[$h]
+        if (-not $lib -and (Test-Path $Cli)) {
+            try {
+                $search = (Invoke-CliQuiet lib search --format json "provides=$h").Output | ConvertFrom-Json
+                $lib = @($search.libraries)[0].name
+            } catch { }
+        }
+        if ($lib) {
+            Write-Tip "It comes from the library '$lib'."
+            if ((Test-Path $Cli) -and (Ask-YesNo "Install '$lib' now?")) { [void](Install-Library $lib) }
+        } else {
+            Write-Tip "Search for $h in the IDE: Sketch > Include Library > Manage Libraries."
+        }
+    }
+
+    $names = @([regex]::Matches($text, '([A-Za-z_][\w:]*).{1,3} (?:was not declared in this scope|does not name a type)') |
+        ForEach-Object { $_.Groups[1].Value } | Select-Object -Unique)
+    foreach ($n in $names) {
+        $found++
+        Write-Host "  * '$n' is unknown to the compiler" -ForegroundColor Yellow
+        switch -Regex ($n) {
+            '^Serial[123]$' { Write-Tip 'This board has only one serial port: use Serial, or choose Mega/ESP32 in Tools > Board.' }
+            '^(WiFi|WebServer|BluetoothSerial)' { Write-Tip 'WiFi/Bluetooth need an ESP32 or ESP8266 board selected in Tools > Board.' }
+            '^LED_BUILTIN$' { Write-Tip 'This board has no LED_BUILTIN: use the pin number of your LED instead (e.g. 13 or 2).' }
+            default {
+                $lib = $HeaderToLibrary["$n.h"]
+                if ($lib) {
+                    Write-Tip "Add #include <$n.h> at the top of the sketch (library '$lib')."
+                    break
+                }
+                Write-Tip 'Check the spelling AND capital letters (digitalWrite, not digitalwrite).'
+                Write-Tip 'Variables must be declared before use, and not only inside another function.'
+                Write-Tip 'If it comes from a library, add its #include line at the top of the sketch.'
+            }
+        }
+    }
+
+    foreach ($rule in $ErrorRules) {
+        if ($text -match $rule.Pattern) {
+            $found++
+            Write-Host "  * $($rule.Title)" -ForegroundColor Yellow
+            foreach ($line in $rule.Fix) { Write-Tip $line }
+        }
+    }
+
+    if ($found -eq 0) {
+        $first = ($text -split "`n") | Where-Object { $_ -match 'error' } | Select-Object -First 1
+        Write-Host '  * Unknown error' -ForegroundColor Yellow
+        if ($first) { Write-Tip "First error line: $($first.Trim())" }
+        Write-Tip 'Fix the FIRST error in the list; the others are often caused by it.'
+        Write-Tip 'The number after the file name (sketch.ino:12) is the line to look at.'
+    }
+    return $found
+}
+
+function Invoke-ExplainError {
+    Write-Title 'Explain an error message'
+    Write-Tip 'In the Arduino IDE, click "Copy error messages" (top right of the Output panel).'
+    Wait-Enter 'Then come back here'
+    $text = ''
+    try { $text = Get-Clipboard -Raw } catch { }
+    if (-not $text -or $text -notmatch 'error|avrdude|esptool|fatal|exit status|Failed') {
+        Write-Step 'Paste the error here, then type END on its own line:'
+        $lines = @()
+        while ($true) {
+            $line = Read-Host
+            if ($line.Trim() -eq 'END') { break }
+            $lines += $line
+        }
+        $text = $lines -join "`n"
+    } else {
+        Write-Ok 'Read the error from the clipboard'
+    }
+    Write-Host ''
+    [void](Show-ErrorHelp $text)
+}
+
+# ---------------------------------------------------------------------------
+# Hardware checks
+# ---------------------------------------------------------------------------
+function Test-ConnectionStable($device) {
+    if (-not $device.Port) { return $true }
+    Write-Step 'Checking that the connection is stable (5 seconds)...'
+    for ($i = 0; $i -lt 5; $i++) {
+        Start-Sleep -Seconds 1
+        if (@([System.IO.Ports.SerialPort]::GetPortNames()) -notcontains $device.Port) {
+            Write-Bad 'The board disconnected by itself.'
+            Write-Tip 'Usual causes: a short circuit in your wiring (5V touching GND), motors or servos'
+            Write-Tip 'powered from the Arduino 5V pin, a damaged cable, or a weak USB port/hub.'
+            Write-Tip 'Remove all wires from the board and try again.'
+            return $false
+        }
+    }
+    Write-Ok 'Connection is stable'
+    return $true
+}
+
+# Sends text out of TX and expects it back on RX (pins 0 and 1 bridged, main chip held in reset).
+# Returns $true/$false, or $null when the port could not be opened.
+function Test-Loopback($port) {
+    $sp = New-Object System.IO.Ports.SerialPort $port, 9600
+    try {
+        $sp.Open()
+        $sp.DiscardInBuffer()
+        $sp.Write('LOOPBACK-TEST-123')
+        Start-Sleep -Milliseconds 800
+        return ($sp.ReadExisting() -match 'LOOPBACK-TEST-123')
+    } catch {
+        Write-Warn "Could not open $port : $($_.Exception.Message)"
+        return $null
+    } finally {
+        if ($sp.IsOpen) { $sp.Close() }
+    }
+}
+
+function Show-BurnBootloaderGuide {
+    Write-Tip 'Fix: burn a new bootloader using a second, working Arduino Uno as a programmer:'
+    Write-Tip '  1. On the working Uno upload: File > Examples > 11.ArduinoISP > ArduinoISP'
+    Write-Tip '  2. Wire working Uno -> broken board:  10 -> RESET,  11 -> 11,  12 -> 12,  13 -> 13,'
+    Write-Tip '     5V -> 5V,  GND -> GND   (Mega as target: use its pins 51, 50, 52 instead of 11, 12, 13)'
+    Write-Tip '  3. Tools > Board: the BROKEN board type.  Tools > Programmer: "Arduino as ISP"'
+    Write-Tip '  4. Tools > Burn Bootloader. Then upload normally over USB again.'
+}
+
+function Invoke-BoardRescue($device, $board) {
+    Write-Title 'Board hardware check'
+    if (-not (Ask-YesNo 'Run a guided hardware check to find the cause? (2 minutes)')) { return }
+
+    Write-Step 'Disconnect ALL wires, sensors and shields from the board. Keep only the USB cable.'
+    Wait-Enter 'When only the USB cable is connected'
+    if ($board -and (Ask-YesNo 'Try the upload again with nothing connected?')) {
+        if (Invoke-Upload $board $device.Port (New-TestSketch)) {
+            Write-Ok 'Upload worked! Something in your wiring was blocking it (often a wire on pin 0 or 1).'
+            return
+        }
+    }
+
+    if (-not (Ask-YesNo 'Is the ON (power) LED on the board lit?')) {
+        Write-Bad 'The board gets no power.'
+        Write-Tip 'Try another cable and USB port. If it stays dark the board is damaged (often a short or a burnt regulator).'
+        return
+    }
+
+    $bootloader = $true
+    if (-not $board -or $board.Core -eq 'arduino:avr') {
+        Write-Step 'Press and release the RESET button while watching the small "L" LED.'
+        $bootloader = Ask-YesNo 'Did the L LED flash quickly 1-3 times right after RESET?'
+    }
+
+    $loop = $null
+    if ($device.Vid -ne '303A') {
+        Write-Step 'USB chip test: connect a jumper wire between pin 0 (RX) and pin 1 (TX).'
+        Write-Step 'Then press and HOLD the RESET button (EN on ESP boards).'
+        Wait-Enter 'While holding RESET'
+        $loop = Test-Loopback $device.Port
+        Write-Step 'You can release RESET and remove the jumper wire.'
+    }
+
+    Write-Host ''
+    if ($loop -eq $false) {
+        Write-Bad 'The USB-to-serial part does not pass data.'
+        Write-Tip 'Try a different USB cable. If it still fails, the USB chip on the board is damaged.'
+    } elseif ($loop -eq $true -and -not $bootloader) {
+        Write-Bad 'The USB part works, but the main chip does not answer: its bootloader is missing or damaged.'
+        Show-BurnBootloaderGuide
+    } elseif ($loop -eq $true) {
+        Write-Ok 'The board hardware looks fine.'
+        Write-Tip 'Check the board type in Tools > Board (a "Uno" clone can really be a Nano, etc).'
+        Write-Tip 'Nano clones: Tools > Processor > ATmega328P (Old Bootloader).'
+        Write-Tip 'Make sure nothing is connected to pins 0 and 1 while uploading.'
+    } else {
+        Write-Tip 'Could not run the USB test. Close every program that uses the port and try again.'
+    }
+}
+
+function Invoke-HardwareCheck {
+    if (-not (Test-Path $Cli)) { Install-ArduinoCli; Initialize-Config @() }
+    $device = Wait-ForNewBoard
+    if (-not $device) { return }
+    if ($device.Vid) { $device = Repair-Device $device }
+    if (-not $device -or -not $device.Port) { return }
+    [void](Test-ConnectionStable $device)
+    Invoke-BoardRescue $device $null
 }
 
 # ---------------------------------------------------------------------------
@@ -691,6 +1023,7 @@ function Invoke-FullSetup {
     Repair-LongPaths
     Install-Cores $cores
     Install-Drivers
+    if (Ask-YesNo 'Install popular beginner libraries (servo, sensors, LCD, LEDs)?') { Install-Libraries }
 
     Write-Title 'Setup finished'
     Write-Ok 'Arduino IDE, boards and drivers are ready.'
@@ -723,9 +1056,12 @@ try {
             Write-Host '  1) Full setup (recommended for the first time)'
             Write-Host '  2) Test my board (detect, upload Blink, check Serial)'
             Write-Host '  3) Diagnose and fix problems'
-            Write-Host '  4) Repair board manager (stuck or failed downloads)'
-            Write-Host '  5) Reinstall USB drivers'
-            Write-Host '  6) Open log folder'
+            Write-Host '  4) Install beginner libraries'
+            Write-Host '  5) Explain an error message'
+            Write-Host '  6) Board hardware check (upload keeps failing)'
+            Write-Host '  7) Repair board manager (stuck or failed downloads)'
+            Write-Host '  8) Reinstall USB drivers'
+            Write-Host '  9) Open log folder'
             Write-Host '  0) Exit'
             $choice = (Read-Host '  Choose').Trim()
             try {
@@ -733,9 +1069,12 @@ try {
                     '1' { Invoke-FullSetup }
                     '2' { Test-Board }
                     '3' { Invoke-Diagnose }
-                    '4' { Install-ArduinoCli; Repair-BoardManager; Install-Cores @('arduino:avr') }
-                    '5' { Install-Drivers; Update-Devices }
-                    '6' { Start-Process explorer.exe $LogDir }
+                    '4' { Install-Libraries }
+                    '5' { Invoke-ExplainError }
+                    '6' { Invoke-HardwareCheck }
+                    '7' { Install-ArduinoCli; Repair-BoardManager; Install-Cores @('arduino:avr') }
+                    '8' { Install-Drivers; Update-Devices }
+                    '9' { Start-Process explorer.exe $LogDir }
                     '0' { break }
                 }
             } catch {
